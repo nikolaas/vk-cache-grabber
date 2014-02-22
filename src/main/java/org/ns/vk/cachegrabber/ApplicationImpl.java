@@ -4,6 +4,8 @@ import java.awt.Container;
 import org.ns.vk.cachegrabber.api.vk.impl.AccessTokenProviderImpl;
 import org.ns.vk.cachegrabber.api.vk.impl.VKApiImpl;
 import java.awt.Window;
+import java.util.HashMap;
+import java.util.Map;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.apache.http.client.HttpClient;
@@ -24,16 +26,17 @@ import org.ns.vk.cachegrabber.json.JSONConverterRegistry;
 class ApplicationImpl implements Application {
 
     private static final String VK_CLIENT_ID = "4199664";
-    private static final String VK_API_SECRET = "MBzZoHYM7O0BjrFf6J3a";
     
     private final Window mainWindow;
     private final Container contentPane;
     private final VKApi vkApi;
+    private final Map<Class<?>, Object> services;
 
     public ApplicationImpl(JFrame mainWindow) {
         this.mainWindow = mainWindow;
         this.contentPane = mainWindow.getContentPane();
         this.vkApi = new VKApiImpl();
+        this.services = new HashMap<>();
     }
             
     @Override
@@ -57,13 +60,27 @@ class ApplicationImpl implements Application {
     }
 
     @Override
-    public String getVkApiSecret() {
-        return VK_API_SECRET;
+    public <T> T getService(Class<T> serviceClass) {
+        Object service = services.get(serviceClass);
+        if ( service != null ) {
+            return serviceClass.cast(service);
+        } else {
+            return null;
+        }
+    }
+    
+    private <T> void register(Class<T> serviceClass, T service) {
+        services.put(serviceClass, service);
     }
     
     void start() {
+        initInnerServices();
         initServices();
         SwingUtilities.invokeLater(new GuiInitializer(this));
+    }
+    
+    private void initInnerServices() {
+        
     }
     
     private void initServices() {
