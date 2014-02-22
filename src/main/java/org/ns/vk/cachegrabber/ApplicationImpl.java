@@ -31,6 +31,7 @@ class ApplicationImpl implements Application {
     private final Container contentPane;
     private final VKApi vkApi;
     private final Map<Class<?>, Object> services;
+    private Config config;
 
     public ApplicationImpl(JFrame mainWindow) {
         this.mainWindow = mainWindow;
@@ -69,11 +70,8 @@ class ApplicationImpl implements Application {
         }
     }
     
-    private <T> void register(Class<T> serviceClass, T service) {
-        services.put(serviceClass, service);
-    }
-    
     void start() {
+        config = new Config();
         initInnerServices();
         initServices();
         SwingUtilities.invokeLater(new GuiInitializer(this));
@@ -81,6 +79,10 @@ class ApplicationImpl implements Application {
     
     private void initInnerServices() {
         
+    }
+    
+    private <T> void register(Class<T> serviceClass, T service) {
+        services.put(serviceClass, service);
     }
     
     private void initServices() {
