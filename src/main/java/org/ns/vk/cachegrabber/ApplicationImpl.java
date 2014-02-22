@@ -16,6 +16,7 @@ import org.apache.http.client.HttpClient;
 import org.ns.ioc.IoC;
 import org.ns.vk.cachegrabber.api.AccountManager;
 import org.ns.vk.cachegrabber.api.Application;
+import org.ns.vk.cachegrabber.api.CredentialProvider;
 import org.ns.vk.cachegrabber.api.vk.AccessTokenProvider;
 import org.ns.vk.cachegrabber.api.vk.Audio;
 import org.ns.vk.cachegrabber.api.vk.VKApi;
@@ -95,6 +96,7 @@ class ApplicationImpl implements Application {
             Logger.getLogger(ApplicationImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
         register(AccountManager.class, new AccountManagerImpl(accountStorageFactory));
+        register(CredentialProvider.class, new CredentialProviderImpl());
     }
     
     private <T> void register(Class<T> serviceClass, T service) {
