@@ -4,22 +4,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.ns.func.Callback;
-import org.ns.util.Utils;
 import org.ns.vk.cachegrabber.api.vk.VKMethod;
 
 /**
@@ -81,10 +73,11 @@ public class RpcUtils {
         return sb == null ? null : sb.toString();
     }
     
-    String paramNameTemplate = "name=\"{}\"";
+    private static final String paramNameTemplate = "name=\"{0}\"";
     
     public static String findParamValue(String content, String paramName) {
-        int paramIndex = content.indexOf(paramName);
+        String param = MessageFormat.format(paramNameTemplate, paramName);
+        int paramIndex = content.indexOf(param);
         if ( paramIndex < 0 ) {
             return null;
         }

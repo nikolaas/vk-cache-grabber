@@ -45,15 +45,10 @@ public class VKApiImpl implements VKApi {
     }
 
     private <T> void putAccessTokenAndExecute(final VKMethod m, final JSONConverter<T> jsonConverter, final Callback<RPC.Result<T>> callback) {
-        IoC.get(AccessTokenProvider.class).getAccessToken(new Callback<AccessToken>() {
-
-            @Override
-            public void call(AccessToken accessToken) {
-                m.setParam(VKMethod.VK_ACCESS_TOKEN, accessToken.getAccessToken());
-                RPC.Result<T> result = IoC.get(RPC.class).execute(m, new JSONResponceConverter(jsonConverter));
-                callback.call(result);
-            }
-        });
+        AccessToken accessToken = IoC.get(AccessTokenProvider.class).getAccessToken();
+        m.setParam(VKMethod.VK_ACCESS_TOKEN, accessToken.getAccessToken());
+        RPC.Result<T> result = IoC.get(RPC.class).execute(m, new JSONResponceConverter(jsonConverter));
+        callback.call(result);
     }
 
 }

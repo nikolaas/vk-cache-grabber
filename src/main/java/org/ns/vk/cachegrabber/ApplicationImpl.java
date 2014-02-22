@@ -106,7 +106,14 @@ class ApplicationImpl implements Application {
     private void initServices() {
         IoC.bind(new HttpClientFactory(), HttpClient.class);
         IoC.bind(new RPC(), RPC.class);
-        IoC.bind(new AccessTokenProviderImpl(), AccessTokenProvider.class);
+        String accessTokenStorage = (String) config.get(ACCESS_TOKEN_STORAGE);
+        DataStoreFactory accessTokenStorageFactory = null;
+        try {
+            accessTokenStorageFactory = new FileDataStoreFactory(new File(accessTokenStorage));
+        } catch (IOException ex) {
+            Logger.getLogger(ApplicationImpl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        IoC.bind(new AccessTokenProviderImpl(accessTokenStorageFactory), AccessTokenProvider.class);
         IoC.bind(new VKObjectFactory(), VKObjectFactory.class);
         
         JSONConverterRegistry converterRegistry = new JSONConverterRegistry()

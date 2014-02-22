@@ -28,11 +28,6 @@
 
   
   <dependencies>
-    <dependency>
-        <groupId>ru.0agr</groupId>
-        <artifactId>vkontakte-http-api</artifactId>
-        <version>0.2</version>
-    </dependency>
       
     <dependency>
         <groupId>junit</groupId>

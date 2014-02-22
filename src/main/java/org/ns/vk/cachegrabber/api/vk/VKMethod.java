@@ -63,6 +63,7 @@ public class VKMethod {
     public static final String VK_RESPONSE_TYPE = "response_type";
     public static final String VK_API_VERSION = "v";
     
+    public static final String DEFAULT_REDIRECT_HOST = "oauth.vk.com";
     public static final String DEFAULT_REDIRECT_URL = "https://oauth.vk.com/blank.html";
     
     public static final String VK_DISPLAY_PAGE = "page";

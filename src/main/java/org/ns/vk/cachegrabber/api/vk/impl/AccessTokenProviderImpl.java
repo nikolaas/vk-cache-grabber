@@ -1,41 +1,25 @@
 package org.ns.vk.cachegrabber.api.vk.impl;
 
-import com.googlecode.vkapi.HttpVkApi;
-import com.googlecode.vkapi.VkApi;
 import org.ns.vk.cachegrabber.api.vk.AccessToken;
-import java.awt.Desktop;
-import java.awt.Desktop.Action;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.namespace.QName;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.StartElement;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.params.CookiePolicy;
-import org.ns.func.Callback;
 import org.ns.ioc.IoC;
+import org.ns.vk.cachegrabber.api.Account;
+import org.ns.vk.cachegrabber.api.AccountManager;
 import org.ns.vk.cachegrabber.api.Application;
 import org.ns.vk.cachegrabber.api.vk.AccessTokenProvider;
+import org.ns.vk.cachegrabber.api.Credential;
+import org.ns.vk.cachegrabber.api.CredentialProvider;
 import org.ns.vk.cachegrabber.api.vk.VKMethod;
+import org.ns.vk.cachegrabber.store.DataStore;
+import org.ns.vk.cachegrabber.store.DataStoreFactory;
 
 /**
  *
@@ -43,15 +27,16 @@ import org.ns.vk.cachegrabber.api.vk.VKMethod;
  */
 public class AccessTokenProviderImpl implements AccessTokenProvider {
 
-    private final AccessTokenResponceHandler handler;
     private final HttpClient httpClient;
     private final VKMethod authorizeMethod;
     private final VKMethod loginMethod;
     private AccessToken accessToken;
+    private final DataStoreFactory accessTokenDataStoreFactory;
+    private DataStore<AccessToken> accessTokenStorage;
     
-    public AccessTokenProviderImpl() {
+    public AccessTokenProviderImpl(DataStoreFactory accessTokenDataStoreFactory) {
+        this.accessTokenDataStoreFactory = accessTokenDataStoreFactory;
         this.httpClient = IoC.get(HttpClient.class);
-        this.handler = new AccessTokenResponceHandler();
         this.authorizeMethod = VKMethod.authorizeMethodTemplate()
                 .param(VKMethod.VK_CLIENT_ID, IoC.get(Application.class).getVkClientId())
                 .param(VKMethod.VK_REDIRECT_URL, VKMethod.DEFAULT_REDIRECT_URL)
@@ -70,53 +55,106 @@ public class AccessTokenProviderImpl implements AccessTokenProvider {
     }
     
     @Override
-    public void getAccessToken(Callback<AccessToken> callback) {
-        /*if ( accessToken != null ) {
-            long current = System.currentTimeMillis() / 1000;
-            if ( current - accessToken.getCreated() < accessToken.getExpiresIn() ) {
-                requestNewAccessToken(callback);
-            } else {
-                callback.call(accessToken);
+    public AccessToken getAccessToken() {
+        Account account = IoC.get(Application.class).getService(AccountManager.class).getCurrentAccount();
+        if ( accessToken != null ) {
+            if ( !checkForLiveToken(accessToken) ) {
+                accessToken = requestNewAccessToken(account);
             }
         } else {
-            requestNewAccessToken(callback);
-        }*/
+            try {
+                accessToken = loadAccessTokenFromStorage(account.getUserId());
+            } catch (IOException ex) {
+                Logger.getLogger(AccessTokenProviderImpl.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if ( accessToken == null  || !checkForLiveToken(accessToken) ) {
+                accessToken = requestNewAccessToken(account);
+            }
+        }
+        return accessToken;
     }
     
-    private void requestNewAccessToken(Callback<AccessToken> callback) {
+    public AccessToken loadAccessTokenFromStorage(String userId) throws IOException {
+        DataStore<AccessToken> storage = getAccessTokenStorage();
+        if ( storage == null ) {
+            return null;
+        }
+        AccessToken stored = storage.get(userId);
+        if (stored == null) {
+            return null;
+        }
+        return stored;
+    }
+    
+    private DataStore<AccessToken> getAccessTokenStorage() {
+        if ( accessTokenStorage == null ) {
+            if ( accessTokenDataStoreFactory != null ) {
+                try {
+                    accessTokenStorage = accessTokenDataStoreFactory.getDataStore(Application.ACCESS_TOKEN_STORAGE);
+                } catch (IOException ex) {
+                    Logger.getLogger(AccessTokenProviderImpl.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        return accessTokenStorage;
+    }
+    
+    private boolean checkForLiveToken(AccessToken token) {
+        long current = System.currentTimeMillis() / 1000;
+//            if ( current - accessToken.getCreated() < accessToken.getExpiresIn() ) {
+        //return token != null && (token.getRefreshToken() != null || token.getExpiresInSeconds() > 60);
+        return false;
+    }
+    
+    private AccessToken requestNewAccessToken(Account account) {
+        Credential credential = IoC.get(Application.class).getService(CredentialProvider.class).getCredential(account.getUserId());
+        if ( credential == null ) {
+            return null;
+        }
+        AccessToken newToken = null;
         try {
             HttpUriRequest request = RpcUtils.toHttpRequest(authorizeMethod);
             HttpResponse response = httpClient.execute(request);
-            Map<String, String> params = new HashMap<>();
             request.abort();
             String content = RpcUtils.read(response.getEntity().getContent());
             String ip_h = RpcUtils.findParamValue(content, "ip_h");
             String to = RpcUtils.findParamValue(content, "to");
+            
+            loginMethod.setParam("ip_h", ip_h);
+            loginMethod.setParam("to", to);
+            loginMethod.setParam("email", credential.getEmail());
+            loginMethod.setParam("pass", Credential.toString(credential.getPassword()));
+            request = RpcUtils.toHttpRequest(loginMethod);
+            response = httpClient.execute(request);
+            request.abort();
+            // Получили редирект на подтверждение требований приложения
+            String headerLocation = response.getFirstHeader("location").getValue();
+            request = new HttpPost(headerLocation);
+            // Проходим по нему
+            response = httpClient.execute(request);
+            request.abort();
+            // Теперь последний редирект на получение токена
+            headerLocation = response.getFirstHeader("location").getValue();
+            // Проходим по нему
+            request = new HttpPost(headerLocation);
+            response = httpClient.execute(request);
+            request.abort();
+            Map<String, String> accessTokenMap = new HashMap<>();
+            headerLocation = response.getFirstHeader("location").getValue();
+            int paramStringStart = headerLocation.indexOf("#") + 1;
+            String paramString = headerLocation.substring(paramStringStart);
+            String[] params = paramString.split("&");
+            for ( String param : params ) {
+                String[] parsedParam = param.split("=");
+                String paramName = parsedParam[0];
+                String paramValue = parsedParam[1];
+                accessTokenMap.put(paramName, paramValue);
+            }
+            newToken = AccessToken.from(accessTokenMap);
         } catch (IOException ex) {
             Logger.getLogger(AccessTokenProviderImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        return newToken;
     }
-    
-    private static class AccessTokenResponceHandler implements RPC.ResponceHandler<AccessToken> {
-
-        @Override
-        public RPC.Result<AccessToken> handle(HttpResponse response, HttpUriRequest request) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            RPC.Result<AccessToken> result;
-            if ( statusCode != 200 ) {
-                Exception ex = new Exception(response.getStatusLine().getReasonPhrase());
-                result = new RPC.Result(ex);
-            } else {
-                // Теперь в след редиректе необходимый токен
-                String headerLocation = response.getFirstHeader("location").getValue();
-                // Просто спарсим его сплитами
-                String access_token = headerLocation.split("#")[1].split("&")[0].split("=")[1];
-                result = new RPC.Result(new AccessToken(access_token, 0, 0, null));
-            }
-            return result;
-        }
-        
-    }
-    
+       
 }
