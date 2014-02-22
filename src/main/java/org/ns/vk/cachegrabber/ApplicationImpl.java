@@ -34,7 +34,7 @@ import org.ns.vk.cachegrabber.store.FileDataStoreFactory;
  */
 class ApplicationImpl implements Application {
 
-    private static final String VK_CLIENT_ID = "4199664";
+    private static final String VK_CLIENT_ID = "4205019";
     
     private final Window mainWindow;
     private final Container contentPane;
