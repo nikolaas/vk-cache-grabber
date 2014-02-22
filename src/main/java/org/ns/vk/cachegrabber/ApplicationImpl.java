@@ -4,12 +4,17 @@ import java.awt.Container;
 import org.ns.vk.cachegrabber.api.vk.impl.AccessTokenProviderImpl;
 import org.ns.vk.cachegrabber.api.vk.impl.VKApiImpl;
 import java.awt.Window;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.apache.http.client.HttpClient;
 import org.ns.ioc.IoC;
+import org.ns.vk.cachegrabber.api.AccountManager;
 import org.ns.vk.cachegrabber.api.Application;
 import org.ns.vk.cachegrabber.api.vk.AccessTokenProvider;
 import org.ns.vk.cachegrabber.api.vk.Audio;
@@ -19,6 +24,8 @@ import org.ns.vk.cachegrabber.api.vk.impl.RPC;
 import org.ns.vk.cachegrabber.api.UriHandlerRegistry;
 import org.ns.vk.cachegrabber.json.AudioJSONConverter;
 import org.ns.vk.cachegrabber.json.JSONConverterRegistry;
+import org.ns.vk.cachegrabber.store.DataStoreFactory;
+import org.ns.vk.cachegrabber.store.FileDataStoreFactory;
 
 /**
  *
@@ -80,6 +87,14 @@ class ApplicationImpl implements Application {
     
     private void initInnerServices() {
         register(UriHandlerRegistry.class, new UriHandlerRegistryImpl());
+        String accountsStorage = (String) config.get(ACCOUNT_STORAGE);
+        DataStoreFactory accountStorageFactory = null;
+        try {
+            accountStorageFactory = new FileDataStoreFactory(new File(accountsStorage));
+        } catch (IOException ex) {
+            Logger.getLogger(ApplicationImpl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        register(AccountManager.class, new AccountManagerImpl(accountStorageFactory));
     }
     
     private <T> void register(Class<T> serviceClass, T service) {
