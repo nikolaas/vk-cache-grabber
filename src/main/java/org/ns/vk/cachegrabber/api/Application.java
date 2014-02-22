@@ -18,5 +18,5 @@ public interface Application {
     
     String getVkClientId();
     
-    String getVkApiSecret();
+    <T> T getService(Class<T> serviceClass);
 }
