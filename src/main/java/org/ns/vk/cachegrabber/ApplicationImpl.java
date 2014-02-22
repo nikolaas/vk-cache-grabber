@@ -16,6 +16,7 @@ import org.ns.vk.cachegrabber.api.vk.Audio;
 import org.ns.vk.cachegrabber.api.vk.VKApi;
 import org.ns.vk.cachegrabber.api.vk.VKObjectFactory;
 import org.ns.vk.cachegrabber.api.vk.impl.RPC;
+import org.ns.vk.cachegrabber.api.UriHandlerRegistry;
 import org.ns.vk.cachegrabber.json.AudioJSONConverter;
 import org.ns.vk.cachegrabber.json.JSONConverterRegistry;
 
@@ -78,7 +79,7 @@ class ApplicationImpl implements Application {
     }
     
     private void initInnerServices() {
-        
+        register(UriHandlerRegistry.class, new UriHandlerRegistryImpl());
     }
     
     private <T> void register(Class<T> serviceClass, T service) {
