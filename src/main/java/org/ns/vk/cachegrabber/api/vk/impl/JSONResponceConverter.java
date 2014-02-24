@@ -16,6 +16,7 @@ import org.ns.vk.cachegrabber.json.JSONConverter;
 /**
  *
  * @author stupak
+ * @param <T>
  */
 public class JSONResponceConverter<T> implements RPC.ResponceHandler<T> {
 
@@ -27,7 +28,7 @@ public class JSONResponceConverter<T> implements RPC.ResponceHandler<T> {
     }
     
     @Override
-    public RPC.Result<T> handle(HttpResponse response, HttpUriRequest request) {
+    public RPC.Result<T> handle(HttpResponse response, HttpUriRequest request) throws Exception {
         Throwable error = null;
         JSONObject json = null;
         try {

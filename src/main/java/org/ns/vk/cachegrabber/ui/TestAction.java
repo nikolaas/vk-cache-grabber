@@ -4,11 +4,11 @@ import java.awt.event.ActionEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
-import org.ns.func.Callback;
 import org.ns.ioc.IoC;
 import org.ns.vk.cachegrabber.api.Application;
 import org.ns.vk.cachegrabber.api.vk.Audio;
 import org.ns.vk.cachegrabber.api.vk.VKApi;
+import org.ns.vk.cachegrabber.api.vk.VkException;
 
 /**
  *
@@ -27,13 +27,13 @@ public class TestAction extends AbstractAction {
         String ownerId = "32659923";
         String audioId = "259636837";
         
-        vkApi.getById(ownerId, audioId, new Callback<Audio>() {
-
-            @Override
-            public void call(Audio audio) {
-                Logger.getLogger(TestAction.class.getName()).log(Level.INFO, "loaded audio: {0}", audio);
-            }
-        });
+        Audio audio = null;
+        try {
+            audio = vkApi.getById(ownerId, audioId);
+        } catch (VkException ex) {
+            Logger.getLogger(TestAction.class.getName()).log(Level.INFO, "Error when audio loading ", ex);
+        }
+        Logger.getLogger(TestAction.class.getName()).log(Level.INFO, "Audio loaded: {0}", audio);
     }
     
 }

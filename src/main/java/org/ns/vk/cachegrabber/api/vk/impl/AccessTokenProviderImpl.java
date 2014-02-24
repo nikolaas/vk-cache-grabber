@@ -18,6 +18,7 @@ import org.ns.vk.cachegrabber.api.vk.AccessTokenProvider;
 import org.ns.vk.cachegrabber.api.Credential;
 import org.ns.vk.cachegrabber.api.CredentialProvider;
 import org.ns.vk.cachegrabber.api.vk.VKMethod;
+import org.ns.vk.cachegrabber.api.vk.VkException;
 import org.ns.vk.cachegrabber.store.DataStore;
 import org.ns.vk.cachegrabber.store.DataStoreFactory;
 
@@ -55,7 +56,7 @@ public class AccessTokenProviderImpl implements AccessTokenProvider {
     }
     
     @Override
-    public AccessToken getAccessToken() {
+    public AccessToken getAccessToken() throws VkException {
         Account account = IoC.get(Application.class).getService(AccountManager.class).getCurrentAccount();
         if ( accessToken != null ) {
             if ( !checkForLiveToken(accessToken) ) {
@@ -106,7 +107,7 @@ public class AccessTokenProviderImpl implements AccessTokenProvider {
         return false;
     }
     
-    private AccessToken requestNewAccessToken(Account account) {
+    private AccessToken requestNewAccessToken(Account account) throws VkException {
         Credential credential = IoC.get(Application.class).getService(CredentialProvider.class).getCredential(account.getUserId());
         if ( credential == null ) {
             return null;
@@ -152,7 +153,7 @@ public class AccessTokenProviderImpl implements AccessTokenProvider {
             }
             newToken = AccessToken.from(accessTokenMap);
         } catch (IOException ex) {
-            Logger.getLogger(AccessTokenProviderImpl.class.getName()).log(Level.SEVERE, null, ex);
+            throw new VkException(ex);
         }
         return newToken;
     }

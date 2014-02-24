@@ -6,5 +6,10 @@ package org.ns.vk.cachegrabber.api.vk;
  */
 public interface AccessTokenProvider {
 
-    AccessToken getAccessToken();
+    /**
+     * может быть null если пользователь отменил процесс авторизации
+     * @return
+     * @throws VkException 
+     */
+    AccessToken getAccessToken() throws VkException;
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.ns.ioc.IoC;
 import org.ns.vk.cachegrabber.api.vk.VKMethod;
 
@@ -32,15 +31,19 @@ public class RPC {
         }
         Result<T> result;
         if ( error == null ) {
-            result = handler.handle(response, request);
+            try {
+                result = handler.handle(response, request);
+            } catch (Exception ex) {
+                result = new Result<>(ex);
+            }
         } else {
-            result = new Result<>(null, error);
+            result = new Result<>(error);
         }
         return result;
     }
     
     public static interface ResponceHandler<T> {
-        Result<T> handle(HttpResponse response, HttpUriRequest request);
+        Result<T> handle(HttpResponse response, HttpUriRequest request) throws Exception;
     }
     
     public static class Result<T> {
