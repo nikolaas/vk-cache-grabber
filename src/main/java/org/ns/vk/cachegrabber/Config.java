@@ -30,14 +30,14 @@ public class Config {
 
             @Override
             public Object apply(String key) {
-                return Application.ACCESS_TOKEN_STORAGE + File.separator;
+                return Application.ACCESS_TOKEN_STORAGE;
             }
         });
         prefs.put(Application.ACCOUNT_STORAGE, new Function<String, Object>() {
 
             @Override
             public Object apply(String key) {
-                return Application.ACCOUNT_STORAGE + File.separator;
+                return Application.ACCOUNT_STORAGE;
             }
         });
     }
