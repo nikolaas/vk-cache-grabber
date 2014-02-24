@@ -38,17 +38,20 @@ class ApplicationImpl implements Application {
     
     private final Window mainWindow;
     private final Container contentPane;
-    private final VKApi vkApi;
     private final Map<Class<?>, Object> services;
     private Config config;
 
     public ApplicationImpl(JFrame mainWindow) {
         this.mainWindow = mainWindow;
         this.contentPane = mainWindow.getContentPane();
-        this.vkApi = new VKApiImpl();
         this.services = new HashMap<>();
     }
-            
+
+    @Override
+    public String getName() {
+        return "VkCacheGrabbler";
+    }
+    
     @Override
     public Window getMainWindow() {
         return mainWindow;
@@ -61,7 +64,7 @@ class ApplicationImpl implements Application {
     
     @Override
     public VKApi getVKApi() {
-        return vkApi;
+        return getService(VKApi.class);
     }
 
     @Override
@@ -80,15 +83,17 @@ class ApplicationImpl implements Application {
     }
     
     void start() {
-        config = new Config();
+        config = new Config(this);
         initInnerServices();
         initServices();
         SwingUtilities.invokeLater(new GuiInitializer(this));
     }
     
     private void initInnerServices() {
+        register(VKApi.class, new VKApiImpl());
         register(UriHandlerRegistry.class, new UriHandlerRegistryImpl());
-        String accountsStorage = (String) config.get(ACCOUNT_STORAGE);
+        String prefFolder = (String) config.get(USER_PREF_FOLDER);
+        String accountsStorage = prefFolder + (String) config.get(ACCOUNT_STORAGE);
         DataStoreFactory accountStorageFactory = null;
         try {
             accountStorageFactory = new FileDataStoreFactory(new File(accountsStorage));
@@ -106,7 +111,8 @@ class ApplicationImpl implements Application {
     private void initServices() {
         IoC.bind(new HttpClientFactory(), HttpClient.class);
         IoC.bind(new RPC(), RPC.class);
-        String accessTokenStorage = (String) config.get(ACCESS_TOKEN_STORAGE);
+        String prefFolder = (String) config.get(USER_PREF_FOLDER);
+        String accessTokenStorage = prefFolder + (String) config.get(ACCESS_TOKEN_STORAGE);
         DataStoreFactory accessTokenStorageFactory = null;
         try {
             accessTokenStorageFactory = new FileDataStoreFactory(new File(accessTokenStorage));
