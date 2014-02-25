@@ -23,7 +23,7 @@ public class Config {
 
             @Override
             public Object apply(String key) {
-                return System.getProperty("user.home") + File.separator + "." + Config.this.application.getName();
+                return System.getProperty("user.home") + File.separator + "." + Config.this.application.getName() + File.separator;
             }
         });
         prefs.put(Application.ACCESS_TOKEN_STORAGE, new Function<String, Object>() {
