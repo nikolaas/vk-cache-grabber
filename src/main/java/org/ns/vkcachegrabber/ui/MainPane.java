@@ -89,6 +89,7 @@ public class MainPane extends JPanel implements DocumentManager {
     private void setDocumentAsContent(Document doc) {
         JComponent component = doc.getComponent();
         contentPane.setViewportView(component);
+        component.requestFocus();
     }
 
     static class ResultListener {
