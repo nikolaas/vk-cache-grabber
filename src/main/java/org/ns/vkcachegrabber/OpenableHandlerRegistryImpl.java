@@ -11,6 +11,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.ns.event.ListenHelper;
+import org.ns.event.Listener;
 import org.ns.vkcachegrabber.api.OpenContext;
 import org.ns.vkcachegrabber.api.Openable;
 
@@ -23,9 +25,11 @@ public class OpenableHandlerRegistryImpl implements OpenableHandlerRegistry {
     private static final Logger logger = Logger.getLogger(OpenableHandlerRegistryImpl.class.getName());
     private final Lock lock = new ReentrantLock();
     private final ConcurrentMap<String, OpenableHandler> handlers;
+    private final ListenHelper<BeforeOpenEvent> listenHelper;
 
     public OpenableHandlerRegistryImpl() {
         this.handlers = new ConcurrentHashMap<>();
+        this.listenHelper = new ListenHelper<>();
     }
     
     @Override
@@ -70,7 +74,9 @@ public class OpenableHandlerRegistryImpl implements OpenableHandlerRegistry {
 
     @Override
     public Document open(Openable openable, OpenContext openContext) throws Exception {
-        return findHandler(openable).open(openable, openContext);
+        OpenableHandler handler = findHandler(openable);
+        fireBeforeOpenEvent(openable);
+        return handler.open(openable, openContext);
     }
     
     private OpenableHandler findHandler(Openable openable) {
@@ -80,6 +86,20 @@ public class OpenableHandlerRegistryImpl implements OpenableHandlerRegistry {
             throw new NullPointerException("Unknown openable's type: " + type);
         }
         return handler;
+    }
+
+    private void fireBeforeOpenEvent(Openable openable) {
+        listenHelper.listen(new BeforeOpenEvent(this, openable));
+    }
+    
+    @Override
+    public boolean addBeforeOpenEventListener(Listener<BeforeOpenEvent> l) {
+        return listenHelper.add(l);
+    }
+
+    @Override
+    public void removeBeforeOpenEventListener(Listener<BeforeOpenEvent> l) {
+        listenHelper.remove(l);
     }
     
 }
