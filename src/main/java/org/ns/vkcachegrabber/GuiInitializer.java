@@ -6,10 +6,14 @@ import java.awt.Window;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
+import org.ns.event.Listener;
 import org.ns.ioc.IoC;
 import org.ns.vkcachegrabber.vk.AuthService;
 import org.ns.vkcachegrabber.vk.VkAuthException;
 import org.ns.task.TaskExecutionService;
+import org.ns.vkcachegrabber.api.OpenableHandlerRegistry;
+import org.ns.vkcachegrabber.api.OpenableHandlerRegistry.BeforeOpenEvent;
+import org.ns.vkcachegrabber.ui.BrandingPane;
 import org.ns.vkcachegrabber.ui.MainMenu;
 import org.ns.vkcachegrabber.ui.MainPane;
 
@@ -48,6 +52,13 @@ class GuiInitializer implements Runnable {
         mainWindow.pack();
         mainWindow.setVisible(true);
         
+        if ( mainWindow instanceof JFrame ) {
+            ((JFrame) mainWindow).setContentPane(new BrandingPane());
+            mainMenu.setVisible(false);
+            application.getService(OpenableHandlerRegistry.class)
+                .addBeforeOpenEventListener(new BrandingCloseTask((JFrame) mainWindow, mainMenu));
+        }
+        
         IoC.get(TaskExecutionService.class).execute("authorize", new Runnable() {
 
             @Override
@@ -59,5 +70,24 @@ class GuiInitializer implements Runnable {
                 }
             }
         });
+    }
+    
+    private class BrandingCloseTask implements Listener<BeforeOpenEvent> {
+
+        private final JFrame mainWindow;
+        private final MainMenu mainMenu;
+
+        public BrandingCloseTask(JFrame mainWindow, MainMenu mainMenu) {
+            this.mainWindow = mainWindow;
+            this.mainMenu = mainMenu;
+        }
+        
+        @Override
+        public void listen(BeforeOpenEvent event) {
+            application.getService(OpenableHandlerRegistry.class).removeBeforeOpenEventListener(this);
+            mainWindow.setContentPane(application.getContentPane());
+            mainMenu.setVisible(true);
+        }
+
     }
 }
