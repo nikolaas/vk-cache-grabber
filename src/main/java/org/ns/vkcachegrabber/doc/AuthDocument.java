@@ -155,6 +155,11 @@ class AuthDocument extends ResultableDocument {
         public char[] getPassword() {
             return passwordField.getPassword();
         }
+
+        @Override
+        public void requestFocus() {
+            loginField.requestFocus();
+        }
         
     }
 }
