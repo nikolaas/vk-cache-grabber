@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.GroupLayout;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -21,7 +23,6 @@ import org.ns.vkcachegrabber.ui.ResultableDocument;
  *
  * @author stupak
  */
-//TODO реализовать валидацию значений
 class AuthDocument extends ResultableDocument {
     
     private Openable openable;
@@ -55,8 +56,13 @@ class AuthDocument extends ResultableDocument {
     private void signIn() {
         String login = authPane.getLogin();
         char[] password = authPane.getPassword();
-        Credential credential = new Credential(login, password);
-        setResult(credential, OK_RESULT);
+        boolean validLogin = !Strings.empty(login);
+        boolean validPassword = password.length > 0;
+        if ( validLogin && validPassword ) {
+            Credential credential = new Credential(login, password);
+            setResult(credential, OK_RESULT);
+        }
+        authPane.setValid(validLogin, validPassword);
     }
     
     @Override
@@ -68,6 +74,11 @@ class AuthDocument extends ResultableDocument {
     public void close() {
     }
     
+    private static final Icon INVALID_ICON = new ImageIcon(AuthDocument.class.getResource("invalid.png"));
+    private static final Icon VALID_ICON = new ImageIcon(AuthDocument.class.getResource("valid.png"));
+    private static final int RIGHT_GAP = 5;
+    private static final int LEFT_GAP = INVALID_ICON.getIconWidth() + RIGHT_GAP;
+    
     private class AuthPane extends JPanel {
 
         private JLabel loginLabel;
@@ -76,6 +87,8 @@ class AuthDocument extends ResultableDocument {
         private JPasswordField passwordField;
         private JCheckBox rememberMeCheckBox;
         private JButton signInButton;
+        private JLabel invalidLoginLabel;
+        private JLabel invalidPasswordLabel;
         
         public AuthPane() {
             super();
@@ -86,10 +99,14 @@ class AuthDocument extends ResultableDocument {
         private void initComponents() {
             loginLabel = new JLabel("Email");
             loginField = new JTextField();
+            loginField.addActionListener(signInAction);
             passwordLabel = new JLabel("Password");
             passwordField = new JPasswordField();
+            passwordField.addActionListener(signInAction);
             rememberMeCheckBox = new JCheckBox("Remember me");
             signInButton = new JButton(signInAction);
+            invalidLoginLabel = new JLabel(VALID_ICON);
+            invalidPasswordLabel = new JLabel(VALID_ICON);
         }
         
         private void initLayouts() {
@@ -98,7 +115,7 @@ class AuthDocument extends ResultableDocument {
             
             layout.setHorizontalGroup(
                 layout.createSequentialGroup()
-                    .addContainerGap()
+                    .addContainerGap(LEFT_GAP, LEFT_GAP)
                     .addGroup(layout.createParallelGroup(GroupLayout.Alignment.CENTER)
                         .addGroup(layout.createSequentialGroup()
                             .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -117,7 +134,12 @@ class AuthDocument extends ResultableDocument {
                             .addComponent(signInButton)
                         )
                     )
-                    .addContainerGap()
+                    //.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addComponent(invalidLoginLabel)
+                        .addComponent(invalidPasswordLabel)
+                    )
+                    .addContainerGap(RIGHT_GAP, RIGHT_GAP)
             );
             
             layout.setVerticalGroup(
@@ -128,11 +150,13 @@ class AuthDocument extends ResultableDocument {
                             .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(loginLabel)
                                 .addComponent(loginField)
+                                .addComponent(invalidLoginLabel)
                             )
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(passwordLabel)
                                 .addComponent(passwordField)
+                                .addComponent(invalidPasswordLabel)
                             )
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(rememberMeCheckBox)
@@ -161,5 +185,9 @@ class AuthDocument extends ResultableDocument {
             loginField.requestFocus();
         }
         
+        void setValid(boolean loginValid, boolean passwordValid) {
+            invalidLoginLabel.setIcon(loginValid ? VALID_ICON : INVALID_ICON);
+            invalidPasswordLabel.setIcon(passwordValid ? VALID_ICON : INVALID_ICON);
+        }
     }
 }
