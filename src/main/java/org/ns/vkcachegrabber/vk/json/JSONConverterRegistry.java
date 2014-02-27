@@ -3,7 +3,6 @@ package org.ns.vkcachegrabber.vk.json;
 import java.util.HashMap;
 import java.util.Map;
 import org.ns.vkcachegrabber.vk.model.VKObject;
-import org.ns.vkcachegrabber.vk.json.JSONConverter;
 
 /**
  *

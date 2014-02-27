@@ -24,14 +24,13 @@ import org.ns.vkcachegrabber.api.OpenableHandlerRegistry;
 import org.ns.vkcachegrabber.vk.model.User;
 import org.ns.vkcachegrabber.doc.AuthHandler;
 import org.ns.vkcachegrabber.doc.ErrorHandler;
-import org.ns.vkcachegrabber.vk.json.AudioJSONConverter;
 import org.ns.vkcachegrabber.vk.json.JSONConverterRegistry;
-import org.ns.vkcachegrabber.vk.json.UserJSONConverter;
 import org.ns.store.FileDataStoreFactory;
 import org.ns.task.TaskExecutionService;
 import org.ns.task.TaskExecutionServiceImpl;
 import org.ns.util.Closeable;
 import org.ns.util.Utils;
+import org.ns.vkcachegrabber.vk.json.DefaultJSONConverter;
 
 /**
  *
@@ -129,8 +128,8 @@ class ApplicationImpl implements Application {
         closeables.add(IoC.bind(VKObjectFactory.defaultFactory(), VKObjectFactory.class));
         
         JSONConverterRegistry converterRegistry = new JSONConverterRegistry()
-            .register(Audio.class, new AudioJSONConverter())
-            .register(User.class, new UserJSONConverter());
+            .register(Audio.class, new DefaultJSONConverter<>(Audio.class))
+            .register(User.class, new DefaultJSONConverter<>(User.class));
         closeables.add(IoC.bind(converterRegistry, JSONConverterRegistry.class));
         
         SwingUtilities.invokeLater(new GuiInitializer(this));

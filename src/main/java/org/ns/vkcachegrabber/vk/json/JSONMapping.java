@@ -1,4 +1,4 @@
-package org.ns.vkcachegrabber.vk.model;
+package org.ns.vkcachegrabber.vk.json;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

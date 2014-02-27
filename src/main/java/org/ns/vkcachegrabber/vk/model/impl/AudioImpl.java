@@ -1,6 +1,7 @@
 package org.ns.vkcachegrabber.vk.model.impl;
 
 import java.util.Objects;
+import org.ns.vkcachegrabber.vk.json.JSONMapping;
 import org.ns.vkcachegrabber.vk.model.Audio;
 
 /**
@@ -13,11 +14,12 @@ public class AudioImpl implements Audio {
     private String ownerId;
     private String artist;
     private String title;
-    private int duration;
+    private long duration;
     private String downloadUrl;
     private String lyricsId;
     private String genreId;
     
+    @JSONMapping(name = "aid")
     @Override
     public String getId() {
         return id;
@@ -54,15 +56,16 @@ public class AudioImpl implements Audio {
         this.title = title;
     }
 
-    public void setDuration(int duration) {
-        this.duration = duration;
-    }
-
     @Override
-    public int getDuration() {
+    public long getDuration() {
         return duration;
     }
 
+    public void setDuration(long duration) {
+        this.duration = duration;
+    }
+
+    @JSONMapping(name = "url")
     @Override
     public String getDownloadUrl() {
         return downloadUrl;
@@ -73,7 +76,7 @@ public class AudioImpl implements Audio {
     }
 
     @Override
-    public String getLirycsId() {
+    public String getLyricsId() {
         return lyricsId;
     }
 

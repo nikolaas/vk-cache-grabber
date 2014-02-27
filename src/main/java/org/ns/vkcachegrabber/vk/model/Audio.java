@@ -18,7 +18,7 @@ public interface Audio extends VKObject {
      * продолжительность
      * @return 
      */
-    int getDuration();
+    long getDuration();
 
     String getDownloadUrl();
     
@@ -26,7 +26,7 @@ public interface Audio extends VKObject {
      * id текста песни
      * @return 
      */
-    String getLirycsId();
+    String getLyricsId();
 
     /**
      * Id жанра

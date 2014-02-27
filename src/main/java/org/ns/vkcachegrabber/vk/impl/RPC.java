@@ -31,11 +31,7 @@ public class RPC {
         }
         Result<T> result;
         if ( error == null ) {
-            try {
-                result = handler.handle(response, request);
-            } catch (Exception ex) {
-                result = new Result<>(ex);
-            }
+            result = handler.handle(response, request);
         } else {
             result = new Result<>(error);
         }
@@ -43,7 +39,7 @@ public class RPC {
     }
     
     public static interface ResponceHandler<T> {
-        Result<T> handle(HttpResponse response, HttpUriRequest request) throws Exception;
+        Result<T> handle(HttpResponse response, HttpUriRequest request);
     }
     
     public static class Result<T> {

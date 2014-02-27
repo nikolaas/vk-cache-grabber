@@ -8,5 +8,5 @@ import org.json.simple.JSONObject;
  * @param <T>
  */
 public interface JSONConverter<T> {
-    T convert(JSONObject json);
+    T convert(JSONObject json) throws JSONConvertException;
 }

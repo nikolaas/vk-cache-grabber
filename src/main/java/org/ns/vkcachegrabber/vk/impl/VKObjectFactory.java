@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.ns.vkcachegrabber.vk.model.Audio;
 import org.ns.vkcachegrabber.vk.model.User;
-import org.ns.vkcachegrabber.vk.model.VKObject;
 import org.ns.vkcachegrabber.vk.model.impl.AudioImpl;
 import org.ns.vkcachegrabber.vk.model.impl.UserImpl;
 
@@ -22,18 +21,18 @@ public class VKObjectFactory {
         return def;
     }
     
-    private final Map<Class<? extends VKObject>, Class<? extends VKObject>> instanceClasses;
+    private final Map<Class<?>, Class<?>> instanceClasses;
     
     public VKObjectFactory() {
         instanceClasses = new HashMap<>();
     }
     
-    public <K extends VKObject, V extends K> VKObjectFactory registerInstance(Class<K> iface, Class<V> impl) {
+    public <K, V> VKObjectFactory registerInstance(Class<K> iface, Class<V> impl) {
         instanceClasses.put(iface, impl);
         return this;
     }
     
-    public <T extends VKObject> T create(Class<T> vkObjectClass) {
+    public <T> T create(Class<T> vkObjectClass) {
         T instance = null;
         Class<? extends T> impl = (Class<? extends T>) instanceClasses.get(vkObjectClass);
         if ( impl != null ) {
@@ -44,5 +43,9 @@ public class VKObjectFactory {
             }
         }
         return instance;
+    }
+    
+    public <T> Class<? extends T> getImpl(Class<T> iface) {
+        return (Class<? extends T>) instanceClasses.get(iface);
     }
 }
