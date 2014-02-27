@@ -1,9 +1,12 @@
 package org.ns.vkcachegrabber.vk.impl;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.ns.func.Function;
 import org.ns.ioc.IoC;
 import org.ns.vkcachegrabber.vk.VKMethod;
 
@@ -13,33 +16,48 @@ import org.ns.vkcachegrabber.vk.VKMethod;
  */
 public class RPC {
     
-    private final HttpClient httpClient;
+    private final Map<String, ResponseParser> parsers = new HashMap<>();
 
-    public RPC() {
-        this.httpClient = IoC.get(HttpClient.class);
+    public RPC register(String responseType, ResponseParser parser) {
+        parsers.put(responseType, parser);
+        return this;
     }
     
-    public <T> Result<T> execute(VKMethod method, ResponceHandler<T> handler) {
-        HttpUriRequest request = null;
-        HttpResponse response = null;
-        Throwable error = null;
+    public <T> Result<T> execute(VKMethod method, Function<ParsedObject, T> function) {
+        Result<T> result;
+        HttpUriRequest request;
+        HttpResponse response;
         try {
             request = RpcUtils.toHttpRequest(method);
-            response = httpClient.execute(request);
+            response = IoC.get(HttpClient.class).execute(request);
         } catch (IOException ex) {
-            error = ex;
+            return new Result<>(ex);
         }
-        Result<T> result;
-        if ( error == null ) {
-            result = handler.handle(response, request);
+        String responseType = getResponseType(response);
+        ResponseParser parser = parsers.get(responseType);
+        if ( parser == null ) {
+            result = new Result<>(new NullPointerException("Response type \"" + responseType + "\" unsupported."));
         } else {
-            result = new Result<>(error);
+            Throwable error = null;
+            T obj = null;
+            try {
+                Object parsedResponse = parser.parseReponce(response);
+                obj = function.apply(new ParsedObject(responseType, parsedResponse));
+            } catch (Exception ex) {
+                error = ex;
+            }
+            if ( error == null ) {
+                result = new Result<>(obj);
+            } else {
+                result = new Result<>(error);
+            }
         }
         return result;
     }
     
-    public static interface ResponceHandler<T> {
-        Result<T> handle(HttpResponse response, HttpUriRequest request);
+    private String getResponseType(HttpResponse response) {
+        String contentType = response.getEntity().getContentType().getValue();
+        return contentType.split(";")[0];
     }
     
     public static class Result<T> {

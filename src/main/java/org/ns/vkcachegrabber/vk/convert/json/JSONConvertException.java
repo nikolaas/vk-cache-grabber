@@ -1,10 +1,12 @@
-package org.ns.vkcachegrabber.vk.json;
+package org.ns.vkcachegrabber.vk.convert.json;
+
+import org.ns.vkcachegrabber.vk.convert.ConvertException;
 
 /**
  *
  * @author stupak
  */
-public class JSONConvertException extends Exception {
+public class JSONConvertException extends ConvertException {
     
     public JSONConvertException() {
         super();

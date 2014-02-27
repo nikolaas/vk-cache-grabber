@@ -1,9 +1,10 @@
-package org.ns.vkcachegrabber.vk.json;
+package org.ns.vkcachegrabber.vk.convert.json;
 
 import org.ns.reflect.TypeConverter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import org.ns.ioc.IoC;
 import org.ns.pojo.PojoClass;
@@ -32,16 +33,17 @@ public class DefaultJSONConverter<T> implements JSONConverter<T> {
     }
     
     @Override
-    public T convert(JSONObject json) throws JSONConvertException {
+    public T convert(JSONAware json) throws JSONConvertException {
+        JSONObject jsonObject = (JSONObject) json;
         T object = null;
         try {
             object = implClass.newInstance();
-            Iterator jsonPropIterator = json.keySet().iterator();
+            Iterator jsonPropIterator = jsonObject.keySet().iterator();
             while ( jsonPropIterator.hasNext() ) {
                 String jsonProp = (String) jsonPropIterator.next();
                 if ( mapping.containsKey(jsonProp) ) {
                     PojoProperty pojoProp = mapping.get(jsonProp);
-                    Object value = json.get(jsonProp);
+                    Object value = jsonObject.get(jsonProp);
                     Object converted = converter.convert(pojoProp.getType(), value);
                     pojoProp.setValue(object, converted);
                 }

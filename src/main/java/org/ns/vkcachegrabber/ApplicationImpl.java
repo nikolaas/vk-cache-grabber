@@ -16,21 +16,19 @@ import org.ns.ioc.IoC;
 import org.ns.vkcachegrabber.vk.AuthService;
 import org.ns.vkcachegrabber.api.Application;
 import org.ns.vkcachegrabber.api.DocumentManager;
-import org.ns.vkcachegrabber.vk.model.Audio;
 import org.ns.vkcachegrabber.vk.VKApi;
 import org.ns.vkcachegrabber.vk.impl.VKObjectFactory;
 import org.ns.vkcachegrabber.vk.impl.RPC;
 import org.ns.vkcachegrabber.api.OpenableHandlerRegistry;
-import org.ns.vkcachegrabber.vk.model.User;
 import org.ns.vkcachegrabber.doc.AuthHandler;
 import org.ns.vkcachegrabber.doc.ErrorHandler;
-import org.ns.vkcachegrabber.vk.json.JSONConverterRegistry;
+import org.ns.vkcachegrabber.vk.convert.ConverterRegistry;
 import org.ns.store.FileDataStoreFactory;
 import org.ns.task.TaskExecutionService;
 import org.ns.task.TaskExecutionServiceImpl;
 import org.ns.util.Closeable;
 import org.ns.util.Utils;
-import org.ns.vkcachegrabber.vk.json.DefaultJSONConverter;
+import org.ns.vkcachegrabber.vk.convert.json.JSONUtils;
 
 /**
  *
@@ -124,13 +122,10 @@ class ApplicationImpl implements Application {
                 .setAccessTokenStorageFactory(FileDataStoreFactory.createFrom(accessTokenStorage))
                 .setCredentialProvider(new CredentialProviderImpl());
         closeables.add(IoC.bind(builder.build(), AuthService.class));
-        closeables.add(IoC.bind(new RPC(), RPC.class));
         closeables.add(IoC.bind(VKObjectFactory.defaultFactory(), VKObjectFactory.class));
         
-        JSONConverterRegistry converterRegistry = new JSONConverterRegistry()
-            .register(Audio.class, new DefaultJSONConverter<>(Audio.class))
-            .register(User.class, new DefaultJSONConverter<>(User.class));
-        closeables.add(IoC.bind(converterRegistry, JSONConverterRegistry.class));
+        closeables.add(IoC.bind(JSONUtils.addVkJSONSupport(new ConverterRegistry()), ConverterRegistry.class));
+        closeables.add(IoC.bind(JSONUtils.addVkJSONSupport(new RPC()), RPC.class));
         
         SwingUtilities.invokeLater(new GuiInitializer(this));
     }

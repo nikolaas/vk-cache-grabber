@@ -1,7 +1,7 @@
 package org.ns.vkcachegrabber.vk.model.impl;
 
 import java.util.Objects;
-import org.ns.vkcachegrabber.vk.json.JSONMapping;
+import org.ns.vkcachegrabber.vk.convert.json.JSONMapping;
 import org.ns.vkcachegrabber.vk.model.Audio;
 
 /**

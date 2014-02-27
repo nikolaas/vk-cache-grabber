@@ -1,5 +1,6 @@
-package org.ns.vkcachegrabber.vk.json;
+package org.ns.vkcachegrabber.vk.convert.json;
 
+import org.ns.vkcachegrabber.vk.convert.json.JSONUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
