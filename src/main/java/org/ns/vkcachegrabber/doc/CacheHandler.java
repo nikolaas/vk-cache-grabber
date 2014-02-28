@@ -14,6 +14,7 @@ import org.ns.vkcachegrabber.api.OpenableHandler;
 public class CacheHandler implements OpenableHandler {
 
     public static final String OPENABLE_TYPE = "cache";
+    public static final String CACHE_PATH = "cachePath";
     
     @Override
     public Collection<String> getSupportedOpenableTypes() {

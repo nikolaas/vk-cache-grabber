@@ -7,12 +7,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
 import org.ns.event.Listener;
+import org.ns.func.Callback;
 import org.ns.ioc.IoC;
+import org.ns.task.Task;
 import org.ns.vkcachegrabber.vk.AuthService;
 import org.ns.vkcachegrabber.vk.VkAuthException;
 import org.ns.task.TaskExecutionService;
+import org.ns.task.TaskUtils;
+import org.ns.util.Utils;
+import org.ns.vkcachegrabber.api.OpenContext;
+import org.ns.vkcachegrabber.api.Openable;
 import org.ns.vkcachegrabber.api.OpenableHandlerRegistry;
 import org.ns.vkcachegrabber.api.OpenableHandlerRegistry.BeforeOpenEvent;
+import org.ns.vkcachegrabber.doc.CacheHandler;
 import org.ns.vkcachegrabber.ui.BrandingPane;
 import org.ns.vkcachegrabber.ui.MainMenu;
 import org.ns.vkcachegrabber.ui.MainPane;
@@ -59,7 +66,7 @@ class GuiInitializer implements Runnable {
                 .addBeforeOpenEventListener(new BrandingCloseTask((JFrame) mainWindow, mainMenu));
         }
         
-        IoC.get(TaskExecutionService.class).execute("authorize", new Runnable() {
+        IoC.get(TaskExecutionService.class).execute(TaskUtils.newTask("authorize", new Runnable() {
 
             @Override
             public void run() {
@@ -69,7 +76,27 @@ class GuiInitializer implements Runnable {
                     Logger.getLogger(GuiInitializer.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
+        })).onFinish(new Callback<Task>() {
+
+            @Override
+            public void call(Task arg) {
+                Utils.invokeWhenUIReady(new OpenCacheTask());
+            }
         });
+    }
+    
+    private class OpenCacheTask implements Runnable {
+
+        @Override
+        public void run() {
+            String cachePath = application.getConfig().get("cachePath");
+            Openable o = Openables.builder()
+                    .openableType(CacheHandler.OPENABLE_TYPE)
+                    .addParam(CacheHandler.CACHE_PATH, cachePath)
+                    .build();
+            application.getDocumentManager().open(o, new OpenContext());
+        }
+        
     }
     
     private class BrandingCloseTask implements Listener<BeforeOpenEvent> {
