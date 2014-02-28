@@ -28,6 +28,7 @@ import org.ns.task.TaskExecutionService;
 import org.ns.task.TaskExecutionServiceImpl;
 import org.ns.util.Closeable;
 import org.ns.util.Utils;
+import org.ns.vkcachegrabber.doc.CacheHandler;
 import org.ns.vkcachegrabber.vk.convert.json.JSONUtils;
 
 /**
@@ -108,6 +109,7 @@ class ApplicationImpl implements Application {
         closeables.add(IoC.bind(TaskExecutionServiceImpl.getDefault(), TaskExecutionService.class));
         register(VKApi.class, new VKApiImpl());
         OpenableHandlerRegistry uriHandlerRegistry = new OpenableHandlerRegistryImpl()
+            .register(new CacheHandler())
             .register(new AuthHandler())
             .register(new ErrorHandler());
         register(OpenableHandlerRegistry.class, uriHandlerRegistry);
