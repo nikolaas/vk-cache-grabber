@@ -33,6 +33,7 @@ public abstract class AbstractDocument implements Document {
     public abstract JComponent getComponent();
 
     @Override
-    public abstract void close();
+    public void close() {
+    }
     
 }

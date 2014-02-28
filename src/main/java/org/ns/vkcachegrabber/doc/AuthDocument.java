@@ -16,7 +16,6 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
 import org.ns.util.Strings;
-import org.ns.vkcachegrabber.api.Openable;
 import org.ns.vkcachegrabber.vk.Credential;
 import org.ns.vkcachegrabber.ui.ResultableDocument;
 
@@ -26,7 +25,6 @@ import org.ns.vkcachegrabber.ui.ResultableDocument;
  */
 class AuthDocument extends ResultableDocument {
     
-    private Openable openable;
     private final AuthPane authPane;
     private final Action signInAction = new AbstractAction("Sign in") {
 
@@ -39,15 +37,9 @@ class AuthDocument extends ResultableDocument {
     public AuthDocument() {
         this.authPane = new AuthPane();
     }
-    
-    @Override
-    public Openable getOpenable() {
-        return openable;
-    }
 
     @Override
-    public void setOpenable(Openable openable) {
-        this.openable = openable;
+    protected void processOpenableChanged() {
         String login = (String) openable.getParameter(AuthHandler.LOGIN);
         if ( !Strings.empty(login) ) {
             authPane.setLogin(login);
@@ -79,10 +71,6 @@ class AuthDocument extends ResultableDocument {
         return authPane;
     }
 
-    @Override
-    public void close() {
-    }
-    
     private static final Icon INCORRECT_ICON = new ImageIcon(AuthDocument.class.getResource("incorrect.png"));
     private static final Icon CORRECT_ICON = new ImageIcon(AuthDocument.class.getResource("correct.png"));
     private static final int RIGHT_GAP = 5;
