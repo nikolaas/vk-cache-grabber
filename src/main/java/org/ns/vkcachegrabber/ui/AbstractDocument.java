@@ -1,6 +1,6 @@
 package org.ns.vkcachegrabber.ui;
 
-import com.sun.org.apache.xerces.internal.utils.Objects;
+import java.util.Objects;
 import javax.swing.JComponent;
 import org.ns.vkcachegrabber.api.Document;
 import org.ns.vkcachegrabber.api.Openable;
