@@ -1,12 +1,10 @@
 package org.ns.vkcachegrabber.ui;
 
-import org.ns.vkcachegrabber.api.Document;
-
 /**
  *
  * @author stupak
  */
-public abstract class ResultableDocument implements Document {
+public abstract class ResultableDocument extends AbstractDocument {
 
     public static final int OK_RESULT = 0;
     public static final int CANCEL_RESULT = 1;
