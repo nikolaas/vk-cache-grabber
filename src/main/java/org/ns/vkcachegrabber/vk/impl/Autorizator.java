@@ -35,6 +35,8 @@ import org.ns.vkcachegrabber.vk.VkAuthException;
 import org.ns.vkcachegrabber.vk.VkException;
 import org.ns.store.DataStore;
 import org.ns.store.DataStoreFactory;
+import org.ns.vkcachegrabber.OpenableBuilder;
+import org.ns.vkcachegrabber.doc.AuthHandler;
 
 /**
  *
@@ -46,6 +48,8 @@ public class Autorizator implements AuthService {
     
     public static final String CURRENT_USER_ID = "currentUserId";
     public static final String ACCOUNT_STORAGE = "accountStorage";
+    
+    private static final String GRANT_ACCESS_PARAM = "__q_hash";
     
     private final List<AccountImpl> accounts = new ArrayList<>();;
     private final Application application;
@@ -291,43 +295,61 @@ public class Autorizator implements AuthService {
         return authorizeImpl(account);
     }
     
+    //TODO реализовать отмену
     private AccountImpl authorizeImpl(AccountImpl account) throws VkException {
         try {
-            HttpUriRequest request = RpcUtils.toHttpRequest(authorizeMethod);
-            HttpResponse response = httpClient.execute(request);
-            request.abort();
-            String grantAccessRedirect = findHeaderValue(response, "location");
-            if ( grantAccessRedirect == null ) {
-                String userId = account == null ? null : account.getUserId();
-                Credential credential = credentialUserRequest(userId);
-                //еще не авторизованы, авторизуемся
-                if ( credential == null ) {
-                    throw new VkException("Неверный логин или пароль");
-                }
+            HttpUriRequest request;
+            HttpResponse response;
+            String location = null;
+            Credential credential = null;
+            while ( !isGrantAccess(location) ) {//пока нам не надут логин-пароль, просим их
+                request = RpcUtils.toHttpRequest(authorizeMethod);
+                response = httpClient.execute(request);
+                request.abort();
+                //location = findHeaderValue(response, "location");
                 String content = RpcUtils.read(response.getEntity().getContent());
                 String ip_h = RpcUtils.findParamValue(content, "ip_h");
                 String to = RpcUtils.findParamValue(content, "to");
-
                 loginMethod.setParam("ip_h", ip_h);
                 loginMethod.setParam("to", to);
+                
+                String userId = account == null ? null : account.getUserId();
+                //получаем пароль (если нет в хранилище, то просим у пользователя)
+                String invalidMes = null;
+                if ( credential != null ) {
+                    invalidMes = "Неверный логин или пароль";
+                }
+                credential = credentialUserRequest(userId, credential, invalidMes);
+                if ( credential == null ) {
+                    //сейчас это не возможно, поскольку форма ввода логина и пароля
+                    //не закроется, пока пользователь их не введет, но на будущее,
+                    //по идее тут можно сделать отмену
+                }
                 loginMethod.setParam("email", credential.getEmail());
                 loginMethod.setParam("pass", Credential.toString(credential.getPassword()));
                 request = RpcUtils.toHttpRequest(loginMethod);
                 response = httpClient.execute(request);
                 request.abort();
-                // Получили редирект на подтверждение требований приложения
-                grantAccessRedirect = findHeaderValue(response, "location");
-            
+                
+                //correct login-password, т.е. редирект на подтверждение требований приложения, это когда в ответе есть параметр "__q_hash"
+                //https://oauth.vk.com/oauth/authorize?client_id={$client_id}&redirect_uri={$redirect_url}&response_type={$response_type}&scope={$scope}&v={$v}&state={$state}&display={$display}&__q_hash={$__q_hash}
+                //incorrect login-password
+                //https://oauth.vk.com/oauth/authorize?client_id={$client_id}&redirect_uri={$redirect_url}&response_type={$response_type}&scope={$scope}&v={$v}&state={$state}&display={$display}&m={$m}&email={$email}
+                location = findHeaderValue(response, "location");
             }
+            // Получили редирект на подтверждение требований приложения
+            String grantAccessRedirect = location;
             request = new HttpPost(grantAccessRedirect);
             // Проходим по нему
             response = httpClient.execute(request);
             request.abort();
             
-            // Теперь последний редирект на получение токена
+            // Подтверждение требований приложения
+            // Если пользователь уже подтверждал требований, то редирект для access_token будет в location
             String accessTokenRedirect = findHeaderValue(response, "location");
             if ( accessTokenRedirect == null ) {
-                //если уже права еще неполучены, то accessTokenRedirect будет в форме, которую нам отправили
+                //если же права еще неполучены, ответ содержит форму для подтверждения
+                //и редирект для access_token будет в ней
                 String content = RpcUtils.read(response.getEntity().getContent());
                 accessTokenRedirect = RpcUtils.findValue(content, "action");
             }
@@ -335,6 +357,7 @@ public class Autorizator implements AuthService {
             request = new HttpPost(accessTokenRedirect);
             response = httpClient.execute(request);
             request.abort();
+            // И тут у нас уже access_token
             String accessTokenResponceUri = findHeaderValue(response, "location");
             Map<String, String> accessTokenMap = Openables.getParams(accessTokenResponceUri);
             AccessToken newToken = AccessToken.from(accessTokenMap);
@@ -349,6 +372,14 @@ public class Autorizator implements AuthService {
         return account;
     }
     
+    private boolean isGrantAccess(String location) {
+        if ( Strings.empty(location) ) {
+            return false;
+        }
+        Map<String, String> params = Openables.getParams(location);
+        return !Strings.empty(params.get(GRANT_ACCESS_PARAM));
+    }
+    
     private String findHeaderValue(HttpResponse response, String headerName) {
         Header header = response.getFirstHeader(headerName);
         if ( header != null ) {
@@ -358,7 +389,7 @@ public class Autorizator implements AuthService {
         }
     }
     
-    private Credential credentialUserRequest(String userId) {
+    private Credential credentialUserRequest(String userId, final Credential old, final String mes) {
         if ( !Strings.empty(userId) ) {
             Credential credential = credentialProvider.getCredential(userId);
             if ( credential != null ) {
@@ -381,7 +412,14 @@ public class Autorizator implements AuthService {
             @Override
             public void run() {
                 OpenContext context = new OpenContext();
-                application.getDocumentManager().openForResult(Openables.buildAuthOpenable(), context, receiver);
+                OpenableBuilder b = Openables.builder().openableType(AuthHandler.OPENABLE_TYPE);
+                if ( old != null ) {
+                    b.addParam(AuthHandler.LOGIN, old.getEmail())
+                     .addParam(AuthHandler.PASSWORD, old.getPassword())
+                     .addParam(AuthHandler.INVALID, true)
+                     .addParam(AuthHandler.INVALID_MESSAGE, mes);
+                }
+                application.getDocumentManager().openForResult(b.build(), context, receiver);
             }
         });
         waitForGUI();

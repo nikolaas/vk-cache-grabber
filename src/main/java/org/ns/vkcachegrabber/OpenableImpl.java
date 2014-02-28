@@ -31,7 +31,17 @@ class OpenableImpl implements Openable {
 
     @Override
     public Object getParameter(String key) {
-        return params.get(key);
+        return getParam(key, null);
+    }
+
+    @Override
+    public Object getParameter(String key, Object defaultValue) {
+        return getParam(key, defaultValue);
+    }
+    
+    private Object getParam(String key, Object defaultValue) {
+        Object value = params.get(key);
+        return value != null ? value : defaultValue;
     }
 
     @Override

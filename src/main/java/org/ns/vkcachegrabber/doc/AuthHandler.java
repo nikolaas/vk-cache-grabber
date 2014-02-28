@@ -15,6 +15,9 @@ public class AuthHandler implements OpenableHandler {
 
     public static final String OPENABLE_TYPE = "auth";
     public static final String LOGIN = "login";
+    public static final String PASSWORD = "password";
+    public static final String INVALID = "invalid";
+    public static final String INVALID_MESSAGE = "invalidMessgae";
     
     @Override
     public Collection<String> getSupportedOpenableTypes() {

@@ -7,6 +7,7 @@ import org.ns.util.Strings;
 import org.ns.vkcachegrabber.api.Openable;
 import org.ns.vkcachegrabber.doc.AuthHandler;
 import org.ns.vkcachegrabber.doc.ErrorHandler;
+import org.ns.vkcachegrabber.vk.Credential;
 
 /**
  *
@@ -31,11 +32,13 @@ public class Openables {
         return buildAuthOpenable(null);
     }
     
-    public static Openable buildAuthOpenable(String login) {
+    public static Openable buildAuthOpenable(Credential old) {
         OpenableBuilder builder = builder()
                 .openableType(AuthHandler.OPENABLE_TYPE);
-        if ( !Strings.empty(login) ) {
-            builder.addParam(AuthHandler.LOGIN, login);
+        if ( old != null ) {
+            builder.addParam(AuthHandler.LOGIN, old.getEmail());
+            builder.addParam(AuthHandler.PASSWORD, old.getPassword());
+            builder.addParam(AuthHandler.INVALID, true);
         }
         return builder.build();
     }
@@ -52,9 +55,12 @@ public class Openables {
     
     public static Map<String, String> getParams(String uri) {
         Map<String, String> params = new HashMap<>();
-        int paramStringStart = uri.indexOf("#");
-        if ( paramStringStart < 0 ) {
-            return params;
+        int paramStringStart = uri.indexOf("?");
+        if ( paramStringStart < 0 ) {//в некоторых uri параметры лежат не за '?', а за '#'
+            paramStringStart = uri.indexOf("#");
+            if ( paramStringStart < 0 ) {
+                return params;
+            }
         }
         String query = uri.substring(paramStringStart + 1);
         if ( Strings.empty(query) ) {
@@ -63,7 +69,10 @@ public class Openables {
         for ( String param : query.split("&") ) {
             String[] parsedParam = param.split("=");
             String name = parsedParam[0];
-            String value = parsedParam[1];
+            String value = null;
+            if ( parsedParam.length == 2 ) {
+                value = parsedParam[1];
+            }
             params.put(name, value);
         }
         return params;

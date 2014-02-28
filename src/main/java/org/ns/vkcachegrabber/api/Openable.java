@@ -11,4 +11,5 @@ public interface Openable {
     String getOpenableType();
     Map<String, Object> getParameters();
     Object getParameter(String key);
+    Object getParameter(String key, Object defaultValue);
 }

@@ -1,5 +1,6 @@
 package org.ns.vkcachegrabber.doc;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -51,6 +52,14 @@ class AuthDocument extends ResultableDocument {
         if ( !Strings.empty(login) ) {
             authPane.setLogin(login);
         }
+        char[] password = (char[]) openable.getParameter(AuthHandler.PASSWORD);
+        if ( password != null && password.length > 0 ) {
+            authPane.setPassword(password);
+        }
+        password = null;
+        boolean invalid = (boolean) openable.getParameter(AuthHandler.INVALID, false);
+        String invalidMessage = (String) openable.getParameter(AuthHandler.INVALID_MESSAGE);
+        authPane.setInvalid(invalid, invalidMessage);
     }
     
     private void signIn() {
@@ -62,7 +71,7 @@ class AuthDocument extends ResultableDocument {
             Credential credential = new Credential(login, password);
             setResult(credential, OK_RESULT);
         }
-        authPane.setValid(validLogin, validPassword);
+        authPane.setCorrect(validLogin, validPassword);
     }
     
     @Override
@@ -74,10 +83,10 @@ class AuthDocument extends ResultableDocument {
     public void close() {
     }
     
-    private static final Icon INVALID_ICON = new ImageIcon(AuthDocument.class.getResource("invalid.png"));
-    private static final Icon VALID_ICON = new ImageIcon(AuthDocument.class.getResource("valid.png"));
+    private static final Icon INCORRECT_ICON = new ImageIcon(AuthDocument.class.getResource("incorrect.png"));
+    private static final Icon CORRECT_ICON = new ImageIcon(AuthDocument.class.getResource("correct.png"));
     private static final int RIGHT_GAP = 5;
-    private static final int LEFT_GAP = INVALID_ICON.getIconWidth() + RIGHT_GAP;
+    private static final int LEFT_GAP = INCORRECT_ICON.getIconWidth() + RIGHT_GAP;
     
     private class AuthPane extends JPanel {
 
@@ -87,8 +96,9 @@ class AuthDocument extends ResultableDocument {
         private JPasswordField passwordField;
         private JCheckBox rememberMeCheckBox;
         private JButton signInButton;
-        private JLabel invalidLoginLabel;
-        private JLabel invalidPasswordLabel;
+        private JLabel incorrectLoginLabel;
+        private JLabel incorrectPasswordLabel;
+        private JLabel invalidLabel;
         
         public AuthPane() {
             super();
@@ -105,8 +115,11 @@ class AuthDocument extends ResultableDocument {
             passwordField.addActionListener(signInAction);
             rememberMeCheckBox = new JCheckBox("Remember me");
             signInButton = new JButton(signInAction);
-            invalidLoginLabel = new JLabel(VALID_ICON);
-            invalidPasswordLabel = new JLabel(VALID_ICON);
+            incorrectLoginLabel = new JLabel(CORRECT_ICON);
+            incorrectPasswordLabel = new JLabel(CORRECT_ICON);
+            invalidLabel = new JLabel();
+            invalidLabel.setForeground(Color.red);
+            invalidLabel.setVisible(false);
         }
         
         private void initLayouts() {
@@ -116,28 +129,33 @@ class AuthDocument extends ResultableDocument {
             layout.setHorizontalGroup(
                 layout.createSequentialGroup()
                     .addContainerGap(LEFT_GAP, LEFT_GAP)
-                    .addGroup(layout.createParallelGroup(GroupLayout.Alignment.CENTER)
-                        .addGroup(layout.createSequentialGroup()
-                            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                .addComponent(loginLabel)
-                                .addComponent(passwordLabel)
-                            )
-                            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                .addComponent(loginField)
-                                .addComponent(passwordField)
-                                .addComponent(rememberMeCheckBox)
-                            )
-                        )
-                        .addGroup(layout.createSequentialGroup()
-                            .addGap(0, 0, Short.MAX_VALUE)
-                            .addComponent(signInButton)
-                        )
-                    )
-                    //.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                     .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addComponent(invalidLoginLabel)
-                        .addComponent(invalidPasswordLabel)
+                        .addGroup(layout.createSequentialGroup()
+                            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.CENTER)
+                                .addGroup(layout.createSequentialGroup()
+                                    .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addComponent(loginLabel)
+                                        .addComponent(passwordLabel)
+                                    )
+                                    .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                    .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addComponent(loginField)
+                                        .addComponent(passwordField)
+                                        .addComponent(rememberMeCheckBox)
+                                    )
+                                )
+                                .addGroup(layout.createSequentialGroup()
+                                    .addGap(0, 0, Short.MAX_VALUE)
+                                    .addComponent(signInButton)
+                                )
+                            )
+                            //.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addComponent(incorrectLoginLabel)
+                                .addComponent(incorrectPasswordLabel)
+                            )
+                        )
+                        .addComponent(invalidLabel)
                     )
                     .addContainerGap(RIGHT_GAP, RIGHT_GAP)
             );
@@ -150,18 +168,20 @@ class AuthDocument extends ResultableDocument {
                             .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(loginLabel)
                                 .addComponent(loginField)
-                                .addComponent(invalidLoginLabel)
+                                .addComponent(incorrectLoginLabel)
                             )
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(passwordLabel)
                                 .addComponent(passwordField)
-                                .addComponent(invalidPasswordLabel)
+                                .addComponent(incorrectPasswordLabel)
                             )
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(rememberMeCheckBox)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(signInButton)
+                            .addGap(0, 0, Short.MAX_VALUE)
+                            .addComponent(invalidLabel)
                         )
                     )
                     .addContainerGap()
@@ -180,14 +200,27 @@ class AuthDocument extends ResultableDocument {
             return passwordField.getPassword();
         }
 
+        public void setPassword(char[] password) {
+            passwordField.setText(new String(password));
+        }
+
         @Override
         public void requestFocus() {
             loginField.requestFocus();
         }
         
-        void setValid(boolean loginValid, boolean passwordValid) {
-            invalidLoginLabel.setIcon(loginValid ? VALID_ICON : INVALID_ICON);
-            invalidPasswordLabel.setIcon(passwordValid ? VALID_ICON : INVALID_ICON);
+        void setCorrect(boolean loginCorrect, boolean passwordCorrect) {
+            incorrectLoginLabel.setIcon(loginCorrect ? CORRECT_ICON : INCORRECT_ICON);
+            incorrectPasswordLabel.setIcon(passwordCorrect ? CORRECT_ICON : INCORRECT_ICON);
+        }
+        
+        void setInvalid(boolean invalid, String invalidMessage) {
+            invalidLabel.setVisible(invalid);
+            if ( invalid ) {
+                invalidLabel.setText(invalidMessage);
+            } else {
+                invalidLabel.setText(null);
+            }
         }
     }
 }
