@@ -14,7 +14,6 @@ import org.ns.vkcachegrabber.vk.AuthService;
 import org.ns.vkcachegrabber.vk.VkAuthException;
 import org.ns.task.TaskExecutionService;
 import org.ns.task.TaskUtils;
-import org.ns.util.Utils;
 import org.ns.vkcachegrabber.api.OpenContext;
 import org.ns.vkcachegrabber.api.Openable;
 import org.ns.vkcachegrabber.api.OpenableHandlerRegistry;
@@ -66,37 +65,34 @@ class GuiInitializer implements Runnable {
                 .addBeforeOpenEventListener(new BrandingCloseTask((JFrame) mainWindow, mainMenu));
         }
         
-        IoC.get(TaskExecutionService.class).execute(TaskUtils.newTask("authorize", new Runnable() {
+        IoC.get(TaskExecutionService.class).execute("authorize", new Runnable() {
 
             @Override
             public void run() {
                 try {
                     IoC.get(AuthService.class).authorize();
                 } catch (VkAuthException ex) {
-                    Logger.getLogger(GuiInitializer.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new RuntimeException(ex);
                 }
             }
-        })).onFinish(new Callback<Task>() {
+        }).onFinish(TaskUtils.eventQueueExecutor(), new Callback<Task>() {
 
             @Override
             public void call(Task arg) {
-                Utils.invokeWhenUIReady(new OpenCacheTask());
+                String cachePath = application.getConfig().get("cachePath");
+                Openable o = Openables.builder()
+                        .openableType(CacheHandler.OPENABLE_TYPE)
+                        .addParam(CacheHandler.CACHE_PATH, cachePath)
+                        .build();
+                application.getDocumentManager().open(o, new OpenContext());
+            }
+        }).onError(TaskUtils.eventQueueExecutor(), new Callback<Throwable>() {
+
+            @Override
+            public void call(Throwable arg) {
+                Logger.getLogger(GuiInitializer.class.getName()).log(Level.SEVERE, null, arg);
             }
         });
-    }
-    
-    private class OpenCacheTask implements Runnable {
-
-        @Override
-        public void run() {
-            String cachePath = application.getConfig().get("cachePath");
-            Openable o = Openables.builder()
-                    .openableType(CacheHandler.OPENABLE_TYPE)
-                    .addParam(CacheHandler.CACHE_PATH, cachePath)
-                    .build();
-            application.getDocumentManager().open(o, new OpenContext());
-        }
-        
     }
     
     private class BrandingCloseTask implements Listener<BeforeOpenEvent> {
