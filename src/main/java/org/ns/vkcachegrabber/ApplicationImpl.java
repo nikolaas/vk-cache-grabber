@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.apache.http.client.HttpClient;
+import org.ns.func.Callback;
 import org.ns.ioc.IoC;
 import org.ns.vkcachegrabber.vk.AuthService;
 import org.ns.vkcachegrabber.api.Application;
@@ -140,4 +141,10 @@ class ApplicationImpl implements Application {
             Utils.closeSilent(closeable);
         }
     }
+
+    @Override
+    public void addCloseHandler(Callback<Application> closeHandler) {
+        lifecycle.addCloseHandler(closeHandler);
+    }
+    
 }

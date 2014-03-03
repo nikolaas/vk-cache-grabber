@@ -2,6 +2,10 @@ package org.ns.vkcachegrabber;
 
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.List;
+import org.ns.func.Callback;
+import org.ns.vkcachegrabber.api.Application;
 
 /**
  *
@@ -10,9 +14,11 @@ import java.awt.event.WindowListener;
 class Lifecycle implements WindowListener {
 
     private final ApplicationImpl application;
+    private final List<Callback<Application>> closeHandlers;
 
     Lifecycle(ApplicationImpl application) {
         this.application = application;
+        this.closeHandlers = new ArrayList<>();
     }
     
     @Override
@@ -21,11 +27,12 @@ class Lifecycle implements WindowListener {
 
     @Override
     public void windowClosing(WindowEvent e) {
+        notifyCloseHandlers();
+        application.close();
     }
 
     @Override
     public void windowClosed(WindowEvent e) {
-        application.close();
     }
 
     @Override
@@ -44,4 +51,13 @@ class Lifecycle implements WindowListener {
     public void windowDeactivated(WindowEvent e) {
     }
     
+    private void notifyCloseHandlers() {
+        for ( Callback<Application> closeHandler : closeHandlers ) {
+            closeHandler.call(application);
+        }
+    }
+    
+    public void addCloseHandler(Callback<Application> closeHandler) {
+        closeHandlers.add(closeHandler);
+    }
 }

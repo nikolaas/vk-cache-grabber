@@ -16,6 +16,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.ns.func.Callback;
 import org.ns.func.Function;
 import org.ns.ioc.IoC;
 import org.ns.util.Assert;
@@ -125,6 +126,13 @@ public class Autorizator implements AuthService {
                 .param("from_host", "oauth.vk.com")
                 .param("expire", "0")
                 .build();
+        application.addCloseHandler(new Callback<Application>() {
+
+            @Override
+            public void call(Application arg) {
+                application.getConfig().set(CURRENT_USER_ID, currentUserId);
+            }
+        });
     }
     
     @Override
@@ -458,16 +466,6 @@ public class Autorizator implements AuthService {
         } finally {
             lock.unlock();
         }
-    }
-    
-    private void showError(final DocumentManager documentManager, String message, Throwable th) {
-        Utils.invokeWhenUIReady(new Runnable() {
-
-            @Override
-            public void run() {
-                documentManager.open(Openables.buildErrorOpenable(), new OpenContext());
-            }
-        });
     }
     
     public static interface WakeUpHandler {

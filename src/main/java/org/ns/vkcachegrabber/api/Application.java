@@ -2,6 +2,7 @@ package org.ns.vkcachegrabber.api;
 
 import java.awt.Container;
 import java.awt.Window;
+import org.ns.func.Callback;
 import org.ns.vkcachegrabber.Config;
 import org.ns.vkcachegrabber.vk.VKApi;
 
@@ -28,4 +29,6 @@ public interface Application {
     <T> T getService(Class<T> serviceClass);
     
     void close();
+    
+    void addCloseHandler(Callback<Application> closeHandler);
 }
