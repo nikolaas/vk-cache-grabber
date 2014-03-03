@@ -116,12 +116,10 @@ class ApplicationImpl implements Application {
         
         closeables.add(IoC.bind(new HttpClientFactory(), HttpClient.class));
         String configFolder = config.getAppConfigFolder();
-        String accountsStorage = configFolder + ACCOUNT_STORAGE;
-        String accessTokenStorage = configFolder + ACCESS_TOKEN_STORAGE;
         Autorizator.Builder builder = new Autorizator.Builder()
                 .application(this)
-                .setAccountStorageFactory(FileDataStoreFactory.createFrom(accountsStorage))
-                .setAccessTokenStorageFactory(FileDataStoreFactory.createFrom(accessTokenStorage))
+                .setAccountStorageFactory(FileDataStoreFactory.createFrom(configFolder))
+                .setAccessTokenStorageFactory(FileDataStoreFactory.createFrom(configFolder))
                 .setCredentialProvider(new CredentialProviderImpl());
         closeables.add(IoC.bind(builder.build(), AuthService.class));
         closeables.add(IoC.bind(VKObjectFactory.defaultFactory(), VKObjectFactory.class));

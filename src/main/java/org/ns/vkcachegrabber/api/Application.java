@@ -11,9 +11,6 @@ import org.ns.vkcachegrabber.vk.VKApi;
  */
 public interface Application {
 
-    public static final String ACCOUNT_STORAGE = "accounts.storage";
-    public static final String ACCESS_TOKEN_STORAGE = "accessTokens.storage";
-    
     String getName();
     
     Window getMainWindow();

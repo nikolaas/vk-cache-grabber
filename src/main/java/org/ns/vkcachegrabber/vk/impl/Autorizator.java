@@ -48,6 +48,7 @@ public class Autorizator implements AuthService {
     
     public static final String CURRENT_USER_ID = "currentUserId";
     public static final String ACCOUNT_STORAGE = "accountStorage";
+    public static final String ACCESS_TOKEN_STORAGE = "accessTokenStorage";
     
     private static final String GRANT_ACCESS_PARAM = "__q_hash";
     
@@ -148,7 +149,7 @@ public class Autorizator implements AuthService {
                 try {
                     accountStorage = accountStorageFactory.getDataStore(ACCOUNT_STORAGE);
                 } catch (IOException ex) {
-                    logger.log(Level.SEVERE, "accountSotage init error", ex);
+                    logger.log(Level.SEVERE, "accountStorage init error", ex);
                 }
             }
         }
@@ -159,7 +160,7 @@ public class Autorizator implements AuthService {
         if ( accessTokenStorage == null ) {
             if ( accessTokenStorageFactory != null ) {
                 try {
-                    accessTokenStorage = accessTokenStorageFactory.getDataStore(Application.ACCESS_TOKEN_STORAGE);
+                    accessTokenStorage = accessTokenStorageFactory.getDataStore(ACCESS_TOKEN_STORAGE);
                 } catch (IOException ex) {
                     logger.log(Level.SEVERE, "accessTokenStorage init error", ex);
                 }
@@ -194,6 +195,18 @@ public class Autorizator implements AuthService {
         }
     }
     
+    public void deleteAccessTokenToStorage(String key) {
+        DataStore<AccessToken> storage = getAccessTokenStorage();
+        if ( storage == null ) {
+            return;
+        }
+        try {
+            storage.delete(key);
+        } catch (IOException ex) {
+            logger.log(Level.SEVERE, "save access token error", ex);
+        }
+    }
+    
     private class AuthFunction implements Function<AuthContext, AccountImpl> {
 
         @Override
@@ -220,10 +233,17 @@ public class Autorizator implements AuthService {
                 }
                 if ( accessToken == null ) {
                     updateAccessToken(account);
-                    saveAccessTokenToStorage(account.getAccessToken());
                 }
             }
-            currentUserId = account == null ? null : account.getUserId();
+            if ( account != null ) {
+                currentUserId = account.getUserId();
+                saveAccessTokenToStorage(account.getAccessToken());
+            } else {
+                if ( !Strings.empty(currentUserId) )  {
+                    deleteAccessTokenToStorage(currentUserId);
+                }
+                currentUserId = null;
+            }
             return account;
         }
         
@@ -454,11 +474,11 @@ public class Autorizator implements AuthService {
         void wakeUp();
     }
     
-    public class AccountImpl implements Account, Serializable {
+    public static class AccountImpl implements Account, Serializable {
 
         private String userId;
         private String userName;
-        private AccessToken accessToken;
+        private transient AccessToken accessToken;
 
         @Override
         public String getUserId() {
